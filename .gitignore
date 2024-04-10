@@ -1,0 +1,16 @@
+/experiments
+*.pyc
+sample*
+/wandb
+*.jpg
+*.pt
+*.pth
+*.png
+*.jpeg
+*.gif
+*.csv
+*.json
+__pycache__
+*.ipynb
+*.pkl
+*.ckpt
