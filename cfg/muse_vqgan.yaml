@@ -1,9 +1,9 @@
 experiment:
     project_name: muse_vqgan
     exp_name: more_depth
-    max_train_examples: 1000000000
+    num_train_samples: 1000000000
     save_every: 1000
-    eval_every: 10010000000000
+    eval_every: null
     sample_every: 500
     log_every: 100
     log_level: info
@@ -41,15 +41,15 @@ model:
         dropout : 0.0
 
 dataset:
-    name: coco
+    name: webdataset
     params:
-        train_path:  /media/pranoy/UBUNTU_ROOT/home/pranoy/datasets/coco2017
+        train_path:  http://192.168.2.8:8000/mscoco/{00000..00059}.tar
         val_path: null
         num_workers: 4
         pin_memory: True
         batch_size: 8
         persistent_workers: True
-        shuffle : True
+        shuffle : False
         train_test_split : 0.9
     preprocessing:
         resolution: 256

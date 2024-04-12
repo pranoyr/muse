@@ -24,6 +24,7 @@ class BaseTrainer(object):
 		self.cfg = cfg
 		self.project_name = cfg.experiment.project_name
 		self.exp_name = cfg.experiment.exp_name
+		self.num_train_samples = cfg.experiment.num_train_samples
 		
 		# init accelerator
 		self.accelerator = Accelerator(
@@ -69,12 +70,12 @@ class BaseTrainer(object):
 		os.makedirs(self.image_saved_dir, exist_ok=True)
 
 
-		logging.info(f"Train dataset size: {len(self.train_dl.dataset)}")
-		logging.info(f"Val dataset size: {len(self.val_dl.dataset)}")
+		logging.info(f"Train dataset size: {self.num_train_samples}")
+		# logging.info(f"Val dataset size: {len(self.val_dl.dataset)}")
 
 		# effective iteration considering gradient accumulation
 		effective_batch_size = self.batch_size * self.gradient_accumulation_steps
-		self.num_iters_per_epoch = math.ceil(len(self.train_dl.dataset) / effective_batch_size)
+		self.num_iters_per_epoch = math.ceil(self.num_train_samples / effective_batch_size)
 		self.total_iters = self.num_epoch * self.num_iters_per_epoch
 		logging.info(f"Number of iterations per epoch: {self.num_iters_per_epoch}")
 		logging.info(f"Total training iterations: {self.total_iters}")

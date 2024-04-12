@@ -2,6 +2,7 @@ import torch
 from .coco import CoCo
 from .transforms import get_transform
 from torchvision.datasets import ImageFolder
+import webdataset as wds
 
 
 def build_loader(cfg):
@@ -24,17 +25,31 @@ def build_loader(cfg):
 			train_ds, val_ds = torch.utils.data.random_split(train_ds, [train_size, val_size])
 		else:
 			assert False, "Train test split is required for imagenet dataset"
+   
+	if cfg.dataset.name == "webdataset":
+		train_ds  = (wds.WebDataset(cfg.dataset.params.train_path)
+           .shuffle(1000)
+           .decode("rgb")
+           .to_tuple("jpg", "txt")
+           .map_tuple(get_transform(cfg), None))
+  
+		val_ds = train_ds # not used
+
+
 
 
 	train_dl = torch.utils.data.DataLoader(train_ds,
 											batch_size=cfg.dataset.params.batch_size, 
 											shuffle=cfg.dataset.params.shuffle, 
 											num_workers=cfg.dataset.params.num_workers)  
+ 
+
 	val_dl = torch.utils.data.DataLoader(val_ds,
 											batch_size=cfg.dataset.params.batch_size, 
 											shuffle=cfg.dataset.params.shuffle, 
 											num_workers=cfg.dataset.params.num_workers) 
-	
+ 
+
 	return (train_dl, val_dl)
 
 

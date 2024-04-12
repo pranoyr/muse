@@ -65,24 +65,24 @@ class MuseTrainer(BaseTrainer):
 		(
 			self.model,
 			self.optim,
-			self.scheduler,
-			self.train_dl
+			self.scheduler
+		
 	
 		) = self.accelerator.prepare(
 			self.model,
 			self.optim,
-			self.scheduler,
-			self.train_dl
+			self.scheduler
+	
 	 )
 		
 	def train(self):
      
-	 
-		start_epoch=self.global_step//len(self.train_dl)
+		iters_per_epoch = math.ceil(self.num_train_samples / self.batch_size)
+		start_epoch=self.global_step//iters_per_epoch
 	  
 		for epoch in range(start_epoch, self.num_epoch):
 			with tqdm(self.train_dl, dynamic_ncols=True, disable=not self.accelerator.is_main_process) as train_dl:
-				for batch in train_dl:
+				for batch in self.train_dl:
 					img, text = batch
 					img = img.to(self.device)
 				
@@ -103,8 +103,8 @@ class MuseTrainer(BaseTrainer):
 					if not (self.global_step % self.sample_every):
 						self.sample_prompts()
       
-					if not (self.global_step % self.eval_every):
-						self.generate_imgs()
+					# if not (self.global_step % self.eval_every):
+					# 	self.generate_imgs()
 			
 					if not (self.global_step % self.gradient_accumulation_steps):
 						lr = self.optim.param_groups[0]['lr']
@@ -138,7 +138,7 @@ class MuseTrainer(BaseTrainer):
      
 		logging.info("Generating samples")
 		self.model.eval()
-		with tqdm(self.train_dl, dynamic_ncols=True, disable=not self.accelerator.is_main_process) as val_dl:
+		with tqdm(self.val_dl, dynamic_ncols=True, disable=not self.accelerator.is_main_process) as val_dl:
 			for i, batch in enumerate(val_dl):
 				img, text = batch
 				img = img.to(self.device)

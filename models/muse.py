@@ -122,14 +122,14 @@ class MUSE(nn.Module):
 		self,
 		dim,
 		vq,
-		enc_type,
-		enc_name,
-		max_length,
-		n_heads,
-		d_head,
-		depth,
-		mult,
-		dropout
+		enc_type = "clip",
+		enc_name = "openai/clip-vit-base-patch32",
+		max_length = 77,
+		n_heads = 8,
+		d_head = 64,
+		depth = 12,
+		mult = 4,
+		dropout = 0.1
 	):
 		super().__init__()
 
@@ -139,11 +139,11 @@ class MUSE(nn.Module):
 	
 		#### Vector Quantizer ####
 		self.vq = vq
-		codebook_size = vq.codebook.codebook_size
-		# codebook_size = 16384
+		# codebook_size = vq.codebook.codebook_size
+		codebook_size = 16384
 		self.mask_token_id = codebook_size
-		num_patches = vq.num_patches
-		# num_patches = 256
+		# num_patches = vq.num_patches
+		num_patches = 256
 
 		#### Transformer Decoder ####
 		self.decoder = BidirectionalDecoder(dim, codebook_size, n_heads, d_head, depth, mult, dropout, num_patches)
@@ -153,7 +153,7 @@ class MUSE(nn.Module):
 		# freeze the text encoder and vq
 		self.text_encoder.requires_grad_(False)
   
-		self.vq.requires_grad_(False)
+		# self.vq.requires_grad_(False)
  
 	def fill_mask(self, image_tokens):
 		batch_size, seq_len = image_tokens.shape
@@ -260,8 +260,8 @@ class MUSE(nn.Module):
 
 	def generate(self, texts, timesteps = 18, device = None):
 		b = len(texts)
-		num_patches = self.vq.num_patches 
-		# num_patches = 256
+		# num_patches = self.vq.num_patches 
+		num_patches = 256
 
 		if not device:
 			device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
