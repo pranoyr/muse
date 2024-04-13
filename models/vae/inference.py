@@ -5,7 +5,6 @@ from PIL import Image
 # also disable grad to save memory
 import torch
 
-DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 
@@ -23,7 +22,9 @@ import torch.nn.functional as F
 import torchvision.transforms as T
 import torchvision.transforms.functional as TF
 import cv2
+import os
 
+local_rank = os.getenv("LOCAL_RANK", default=-1)
 
 class VQVAE:
 
@@ -32,7 +33,9 @@ class VQVAE:
 		self.is_gumbel = is_gumbel
 			
 		config16384 = self.load_config(config_path)
-		self.model = self.load_vqgan(config16384, ckpt_path=ckpt_path).to(DEVICE)
+		self.model = self.load_vqgan(config16384, ckpt_path=ckpt_path)
+		self.model = self.model.to(torch.device(f"cuda:{local_rank}"))
+		
 
 
 	def preprocess(self, img, target_image_size=256, map_dalle=True):
@@ -60,7 +63,7 @@ class VQVAE:
 		else:
 			model = VQModel(**config.model.params)
 		if ckpt_path is not None:
-			sd = torch.load(ckpt_path, map_location="cpu")["state_dict"]
+			sd = torch.load(ckpt_path)["state_dict"]
 			missing, unexpected = model.load_state_dict(sd, strict=False)
 		return model.eval()
 
@@ -98,7 +101,6 @@ class VQVAE:
 	def encode_imgs(self, x, size=256):
 		# x_vqgan = preprocess(img, target_image_size=size, map_dalle=False)
 		
-		x = x.to(DEVICE)
 		b = x.shape[0]
 		x = self.preprocess_vqgan(x)
   

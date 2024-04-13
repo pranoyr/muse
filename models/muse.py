@@ -173,32 +173,39 @@ class MUSE(nn.Module):
 		return input_ids, labels
   
 
-	def forward(self, texts, imgs):
-		# text encoder
-		device = imgs.device
-		b = len(texts)
-  
-		text_embeds, _ = self.text_encoder(texts, device)
+	def forward(self, texts, imgs=None):
 
-		# quantize images
-		with torch.no_grad():
-			img_token_indices = self.vq.encode_imgs(imgs)
+		if exists(imgs):
+			# text encoder
+			device = imgs.device
+			b = len(texts)
+
 	
-		# apply cosine schedule to img tokens
-		img_token_indices, tgt = self.fill_mask(img_token_indices)
-  
-		# self conditioning (for classifier free guidance)
-		context_mask = uniform((b,1,1), device=device) < 0.9
-		text_embeds = text_embeds * context_mask
-  
+			text_embeds, _ = self.text_encoder(texts, device)
 
-
-		logits = self.decoder(img_token_indices, context=text_embeds)
+			# quantize images
+			with torch.no_grad():
+				img_token_indices = self.vq.encode_imgs(imgs)
+				# img_token_indices =  img_token_indices.to(device)
 		
-	 	
-		logits = rearrange(logits, "b t c -> b c t")
-		loss = torch.nn.functional.cross_entropy(logits, tgt, ignore_index=self.ignore_index)
-		return loss
+			# apply cosine schedule to img tokens
+			img_token_indices, tgt = self.fill_mask(img_token_indices)
+	
+			# self conditioning (for classifier free guidance)
+			context_mask = uniform((b,1,1), device=device) < 0.9
+			text_embeds = text_embeds * context_mask
+	
+		
+			logits = self.decoder(img_token_indices, context=text_embeds)
+			
+			
+			logits = rearrange(logits, "b t c -> b c t")
+			loss = torch.nn.functional.cross_entropy(logits, tgt, ignore_index=self.ignore_index)
+			return loss
+		else:
+			# generate images
+			imgs = self.generate(texts, device=torch.device("cuda:0"))
+			return imgs
 
 	def generate2(self, texts, timesteps = 18, device = None):
 	 

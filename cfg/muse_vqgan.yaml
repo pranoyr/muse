@@ -1,13 +1,13 @@
 experiment:
     project_name: muse_vqgan
-    exp_name: more_depth
+    exp_name: resume_run
     num_train_samples: 1000000000
-    save_every: 1000
+    save_every: 2000
     eval_every: null
-    sample_every: 500
+    sample_every: 2000
     log_every: 100
     log_level: info
-    resume_path_from_checkpoint: null
+    resume_path_from_checkpoint: /home/pranoy/code/scratch_experiments/outputs/muse_vqgan/checkpoints/muse_vqgan_more_depth.pt
 
 
 codebook:
@@ -36,7 +36,7 @@ model:
     decoder:
         n_heads : 16
         d_head : 64
-        depth : 24
+        depth : 16
         mult : 6
         dropout : 0.0
 
@@ -47,7 +47,7 @@ dataset:
         val_path: null
         num_workers: 4
         pin_memory: True
-        batch_size: 8
+        batch_size: 1
         persistent_workers: True
         shuffle : False
         train_test_split : 0.9
@@ -76,7 +76,7 @@ lr_scheduler:
         decay_steps: null
 
 training:
-    gradient_accumulation_steps: 4
+    gradient_accumulation_steps: 16
     mixed_precision: "no"
     seed: 42
     num_epochs: 200

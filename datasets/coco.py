@@ -24,8 +24,8 @@ class CoCo:
         self.imgids = self.coco.getImgIds()
         self.transform = get_transform(cfg, is_train)
         
-        if cfg.experiment.max_train_examples < len(self.imgids):
-            self.imgids = self.imgids[:cfg.experiment.max_train_examples]
+        if cfg.experiment.num_train_samples < len(self.imgids):
+            self.imgids = self.imgids[:cfg.experiment.num_train_samples]
             
     def __getitem__(self, idx):
         imgid = self.imgids[idx]

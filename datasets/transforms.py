@@ -17,7 +17,7 @@ def get_transform(cfg, is_train=True):
  
     resize = pair(int(size/scale))
     t = []
-    t.append(T.ToPILImage())
+    # t.append(T.ToPILImage())
     t.append(T.Resize(resize, interpolation=transforms.InterpolationMode.BILINEAR))
     if is_train:
         if cfg.dataset.preprocessing.random_crop:

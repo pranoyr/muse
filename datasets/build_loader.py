@@ -4,6 +4,13 @@ from .transforms import get_transform
 from torchvision.datasets import ImageFolder
 import webdataset as wds
 
+def my_collate_fn(samples):
+    images, texts = zip(*samples)
+    images = torch.stack(images)
+    return images, texts
+
+
+
 
 def build_loader(cfg):
 	if cfg.dataset.name == "coco":
@@ -27,13 +34,34 @@ def build_loader(cfg):
 			assert False, "Train test split is required for imagenet dataset"
    
 	if cfg.dataset.name == "webdataset":
-		train_ds  = (wds.WebDataset(cfg.dataset.params.train_path)
-           .shuffle(1000)
-           .decode("rgb")
-           .to_tuple("jpg", "txt")
-           .map_tuple(get_transform(cfg), None))
+		dataset = wds.DataPipeline(
+			wds.SimpleShardList(cfg.dataset.params.train_path),
+
+			# at this point we have an iterator over all the shards
+			wds.shuffle(100),
+
+			# add wds.split_by_node here if you are using multiple nodes
+			wds.split_by_worker,
+
+			# at this point, we have an iterator over the shards assigned to each worker
+			wds.tarfile_to_samples(),
+
+			# this shuffles the samples in memory
+			wds.shuffle(1000),
+
+			# this decodes the images and json
+			wds.decode("pil"),
+			wds.to_tuple("jpg", "txt"),
+			wds.map_tuple(get_transform(cfg), None),
+			wds.shuffle(1000),
+			# wds.batched(cfg.dataset.params.batch_size)
+		)
   
-		val_ds = train_ds # not used
+		train_dl = wds.WebLoader(dataset, batch_size=cfg.dataset.params.batch_size)
+  
+		return train_dl, train_dl
+
+
 
 
 

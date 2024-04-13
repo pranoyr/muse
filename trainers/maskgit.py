@@ -45,6 +45,8 @@ class MaskGitTrainer(BaseTrainer):
 		self.optim = get_optimizer(cfg, self.model.parameters())
 		self.scheduler = get_scheduler(cfg, self.optim, decay_steps=decay_steps)
 
+	
+
 		(
 			self.model,
 			self.optim,

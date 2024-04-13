@@ -26,6 +26,10 @@ from PIL import Image
 import cv2
 import wandb
 from .utils.base_trainer import BaseTrainer
+import os
+
+
+local_rank = int(os.getenv("LOCAL_RANK", default=-1))
 
 
 class MuseTrainer(BaseTrainer):
@@ -61,6 +65,7 @@ class MuseTrainer(BaseTrainer):
 		self.optim = get_optimizer(cfg, params)
 		self.scheduler = get_scheduler(cfg, self.optim, decay_steps=decay_steps)
 
+
 	
 		(
 			self.model,
@@ -73,7 +78,12 @@ class MuseTrainer(BaseTrainer):
 			self.optim,
 			self.scheduler
 	
-	 )
+	 	)
+
+
+	@property
+	def device(self):
+		return self.accelerator.device
 		
 	def train(self):
      
@@ -101,7 +111,8 @@ class MuseTrainer(BaseTrainer):
 						self.save_ckpt(rewrite=True)
 					
 					if not (self.global_step % self.sample_every):
-						self.sample_prompts()
+						if local_rank == 0:
+							self.sample_prompts()
       
 					# if not (self.global_step % self.eval_every):
 					# 	self.generate_imgs()
@@ -109,7 +120,7 @@ class MuseTrainer(BaseTrainer):
 					if not (self.global_step % self.gradient_accumulation_steps):
 						lr = self.optim.param_groups[0]['lr']
 						self.accelerator.log({"loss": loss.item(), "lr": lr}, step=self.global_step)
-						# print(f"Step: {self.global_step}, Loss: {loss.item()}")
+						print(f"Step: {self.global_step}, Loss: {loss.item()}")
 					
 					self.global_step += 1
 	  
@@ -119,14 +130,18 @@ class MuseTrainer(BaseTrainer):
 	
 	@torch.no_grad()
 	def sample_prompts(self):
+		print("Sampling prompts")
 		self.model.eval()
-		prompts = []
+		images = []
 		with open("data/prompts/dalle_prompts.txt", "r") as f:
 			for line in f:
 				text = line.strip()
-				prompts.append(text)
-		imgs = self.model.generate(prompts)
-		grid = make_grid(imgs, nrow=6, normalize=False, value_range=(-1, 1))
+				imgs = self.model([text])
+				images.append(imgs)
+				# prompts.append(text)
+		# imgs = self.model(prompts)
+		images = torch.cat(images, dim=0)
+		grid = make_grid(images, nrow=6, normalize=True, value_range=(-1, 1))
 		# send this to wandb
 		self.accelerator.log({"samples": [wandb.Image(grid, caption="Generated samples")]})
 		save_image(grid, os.path.join(self.image_saved_dir, f'step.png'))
@@ -146,7 +161,7 @@ class MuseTrainer(BaseTrainer):
 				if i > 3:
 					break
 					
-				imgs = self.model.generate(text, device=self.device)
+				imgs = self.model(text, device=self.device)
 				grid = make_grid(imgs, nrow=6, normalize=False, value_range=(-1, 1))
 				# send this to wandb
 				self.accelerator.log({"samples": [wandb.Image(grid, caption="Generated samples")]})

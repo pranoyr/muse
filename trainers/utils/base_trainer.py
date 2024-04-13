@@ -30,7 +30,7 @@ class BaseTrainer(object):
 		self.accelerator = Accelerator(
 			mixed_precision=cfg.training.mixed_precision,
 			gradient_accumulation_steps=cfg.training.gradient_accumulation_steps,
-			log_with="wandb"
+			log_with="tensorboard"
 		)
 		self.accelerator.init_trackers(
 				project_name=cfg.experiment.project_name,
